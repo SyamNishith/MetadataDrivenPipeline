@@ -1,0 +1,23 @@
+{
+    "now": "2026-06-11T13:04:20.989Z",
+    "perfNow": 34891759.7,
+    "diagnosticCorrelation": "64720697-06a6-4ed4-9cbe-61c60d54d43e",
+    "source": "DownloadSupportFiles",
+    "environment": {
+        "productName": "adf",
+        "buildVersion": "1.0.060526.4",
+        "environmentType": 3,
+        "resourceName": "mypractisedatafactory",
+        "resourceRegion": "eastus",
+        "resourceGroup": "PractiseResourceGroup",
+        "subscriptionId": "b3ccee66-c359-41db-9f74-21c1e1881db4",
+        "sessionId": "SPlTokrriHWGZl/BRluvtX",
+        "operationId": "",
+        "gitType": "live",
+        "loggingKey": "5da51f5c-1050-4f66-b82f-4757456eaa6e"
+    },
+    "additionalInfo": {
+        "selectedResource": "MetaDataDrivenPipeline",
+        "selectedResourceType": "pipeline"
+    }
+}

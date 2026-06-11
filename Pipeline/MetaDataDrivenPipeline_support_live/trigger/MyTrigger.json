@@ -1,0 +1,25 @@
+{
+    "name": "MyTrigger",
+    "properties": {
+        "annotations": [],
+        "runtimeState": "Stopped",
+        "pipelines": [
+            {
+                "pipelineReference": {
+                    "referenceName": "MetaDataDrivenPipeline",
+                    "type": "PipelineReference"
+                }
+            }
+        ],
+        "type": "ScheduleTrigger",
+        "typeProperties": {
+            "recurrence": {
+                "frequency": "Minute",
+                "interval": 15,
+                "startTime": "2026-06-11T16:24:00",
+                "endTime": "2026-06-12T17:00:00",
+                "timeZone": "India Standard Time"
+            }
+        }
+    }
+}

@@ -1,0 +1,22 @@
+{
+    "name": "DS_ControlTable",
+    "properties": {
+        "linkedServiceName": {
+            "referenceName": "OnpremSqlServer",
+            "type": "LinkedServiceReference"
+        },
+        "annotations": [],
+        "type": "SqlServerTable",
+        "schema": [
+            {
+                "name": "tablename",
+                "type": "varchar"
+            }
+        ],
+        "typeProperties": {
+            "schema": "dbo",
+            "table": "tablelist"
+        }
+    },
+    "type": "Microsoft.DataFactory/factories/datasets"
+}

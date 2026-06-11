@@ -1,0 +1,21 @@
+{
+    "name": "OnpremSqlServer",
+    "type": "Microsoft.DataFactory/factories/linkedservices",
+    "properties": {
+        "annotations": [],
+        "type": "SqlServer",
+        "typeProperties": {
+            "server": "SyamNishith\\SQLEXPRESS",
+            "database": "practiseDB",
+            "encrypt": "optional",
+            "trustServerCertificate": true,
+            "authenticationType": "SQL",
+            "userName": "adfuser",
+            "encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiI4ZWYwNmUzMy1hZTdjLTRjOWEtYTZlNC05ZDc0ZDgxMWM1NWQiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
+        },
+        "connectVia": {
+            "referenceName": "SelfHostedintegrationRuntime",
+            "type": "IntegrationRuntimeReference"
+        }
+    }
+}

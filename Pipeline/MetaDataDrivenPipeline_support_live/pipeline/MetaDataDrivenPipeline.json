@@ -1,0 +1,349 @@
+{
+    "name": "MetaDataDrivenPipeline",
+    "properties": {
+        "activities": [
+            {
+                "name": "LookUpControlTable",
+                "type": "Lookup",
+                "dependsOn": [],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "source": {
+                        "type": "SqlServerSource",
+                        "sqlReaderQuery": {
+                            "value": "select tablename\nfrom tablelist",
+                            "type": "Expression"
+                        },
+                        "queryTimeout": "02:00:00",
+                        "partitionOption": "None"
+                    },
+                    "dataset": {
+                        "referenceName": "DS_ControlTable",
+                        "type": "DatasetReference"
+                    },
+                    "firstRowOnly": false
+                }
+            },
+            {
+                "name": "IterateLookupTable",
+                "type": "ForEach",
+                "dependsOn": [
+                    {
+                        "activity": "LookUpControlTable",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "userProperties": [],
+                "typeProperties": {
+                    "items": {
+                        "value": "@activity('LookUpControlTable').output.value",
+                        "type": "Expression"
+                    },
+                    "isSequential": true,
+                    "activities": [
+                        {
+                            "name": "AccessFileName",
+                            "type": "SetVariable",
+                            "dependsOn": [],
+                            "policy": {
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "userProperties": [],
+                            "typeProperties": {
+                                "variableName": "GetFileName",
+                                "value": {
+                                    "value": "@item().tablename",
+                                    "type": "Expression"
+                                }
+                            }
+                        },
+                        {
+                            "name": "SchemaName",
+                            "type": "SetVariable",
+                            "dependsOn": [
+                                {
+                                    "activity": "AccessFileName",
+                                    "dependencyConditions": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            ],
+                            "policy": {
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "userProperties": [],
+                            "typeProperties": {
+                                "variableName": "GetSchemaName",
+                                "value": {
+                                    "value": "@split(variables('GetFileName'),'.')[0]",
+                                    "type": "Expression"
+                                }
+                            }
+                        },
+                        {
+                            "name": "TableName",
+                            "type": "SetVariable",
+                            "dependsOn": [
+                                {
+                                    "activity": "SchemaName",
+                                    "dependencyConditions": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            ],
+                            "policy": {
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "userProperties": [],
+                            "typeProperties": {
+                                "variableName": "GetTableName",
+                                "value": {
+                                    "value": "@split(variables('GetFileName'),'.')[1]",
+                                    "type": "Expression"
+                                }
+                            }
+                        },
+                        {
+                            "name": "CopyOnpremToAdlsGen2",
+                            "type": "Copy",
+                            "dependsOn": [
+                                {
+                                    "activity": "TableName",
+                                    "dependencyConditions": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            ],
+                            "policy": {
+                                "timeout": "0.12:00:00",
+                                "retry": 0,
+                                "retryIntervalInSeconds": 30,
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "userProperties": [],
+                            "typeProperties": {
+                                "source": {
+                                    "type": "SqlServerSource",
+                                    "queryTimeout": "02:00:00",
+                                    "partitionOption": "None"
+                                },
+                                "sink": {
+                                    "type": "DelimitedTextSink",
+                                    "storeSettings": {
+                                        "type": "AzureBlobFSWriteSettings"
+                                    },
+                                    "formatSettings": {
+                                        "type": "DelimitedTextWriteSettings",
+                                        "quoteAllText": true,
+                                        "fileExtension": ".txt"
+                                    }
+                                },
+                                "enableStaging": false,
+                                "translator": {
+                                    "type": "TabularTranslator",
+                                    "typeConversion": true,
+                                    "typeConversionSettings": {
+                                        "allowDataTruncation": true,
+                                        "treatBooleanAsNumber": false
+                                    }
+                                }
+                            },
+                            "inputs": [
+                                {
+                                    "referenceName": "DS_SqlSchemaTableParam",
+                                    "type": "DatasetReference",
+                                    "parameters": {
+                                        "SchemaName": {
+                                            "value": "@variables('GetSchemaName')",
+                                            "type": "Expression"
+                                        },
+                                        "TableName": {
+                                            "value": "@variables('GetTableName')",
+                                            "type": "Expression"
+                                        }
+                                    }
+                                }
+                            ],
+                            "outputs": [
+                                {
+                                    "referenceName": "DS_adlsGen2",
+                                    "type": "DatasetReference",
+                                    "parameters": {
+                                        "SinkFileName": {
+                                            "value": "@concat(variables('GetTableName'),'.csv')",
+                                            "type": "Expression"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "Bronze-Notebook",
+                "type": "DatabricksNotebook",
+                "dependsOn": [
+                    {
+                        "activity": "IterateLookupTable",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "notebookPath": "/Workspace/AzureDataCleaning/Bronze_Load"
+                },
+                "linkedServiceName": {
+                    "referenceName": "AzureDatabricks1",
+                    "type": "LinkedServiceReference"
+                }
+            },
+            {
+                "name": "Silver-Notebook",
+                "type": "DatabricksNotebook",
+                "dependsOn": [
+                    {
+                        "activity": "Bronze-Notebook",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "notebookPath": "/Workspace/AzureDataCleaning/Silver_Load"
+                },
+                "linkedServiceName": {
+                    "referenceName": "AzureDatabricks1",
+                    "type": "LinkedServiceReference"
+                }
+            },
+            {
+                "name": "Gold-Notebook",
+                "type": "DatabricksNotebook",
+                "dependsOn": [
+                    {
+                        "activity": "Silver-Notebook",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "notebookPath": "/Workspace/AzureDataCleaning/Gold_Load"
+                },
+                "linkedServiceName": {
+                    "referenceName": "AzureDatabricks1",
+                    "type": "LinkedServiceReference"
+                }
+            },
+            {
+                "name": "OnSuccess",
+                "type": "WebActivity",
+                "dependsOn": [
+                    {
+                        "activity": "Gold-Notebook",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "method": "POST",
+                    "url": "https://prod-29.northcentralus.logic.azure.com:443/workflows/7db04c633d9b4ac0b4710fe7c7238612/triggers/When_an_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_an_HTTP_request_is_received%2Frun&sv=1.0&sig=OIRuku1uyORFi6Vf9ohdVEAV2m2d-og56FnbDKnhg_c",
+                    "body": {
+                        "value": "{\n\"PipelineName\":\"@{pipeline().Pipeline}\",\n\"Status\":\"Succeeded\",\n\"RunId\":\"@{pipeline().RunId}\",\n\"Time\":\"@{utcNow()}\",\n}",
+                        "type": "Expression"
+                    }
+                }
+            },
+            {
+                "name": "OnFailure",
+                "type": "WebActivity",
+                "dependsOn": [
+                    {
+                        "activity": "Gold-Notebook",
+                        "dependencyConditions": [
+                            "Failed"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "method": "POST",
+                    "url": "https://prod-29.northcentralus.logic.azure.com:443/workflows/7db04c633d9b4ac0b4710fe7c7238612/triggers/When_an_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_an_HTTP_request_is_received%2Frun&sv=1.0&sig=OIRuku1uyORFi6Vf9ohdVEAV2m2d-og56FnbDKnhg_c",
+                    "body": {
+                        "value": "{\n\"PipelineName\":\"@{pipeline().Pipeline}\",\n\"Status\":\"Failed\",\n\"RunId\":\"@{pipeline().RunId}\",\n\"Time\":\"@{utcNow()}\",\n}",
+                        "type": "Expression"
+                    }
+                }
+            }
+        ],
+        "variables": {
+            "GetFileName": {
+                "type": "String"
+            },
+            "GetSchemaName": {
+                "type": "String"
+            },
+            "GetTableName": {
+                "type": "String"
+            }
+        },
+        "annotations": [],
+        "lastPublishTime": "2026-06-10T07:38:11Z"
+    },
+    "type": "Microsoft.DataFactory/factories/pipelines"
+}
