@@ -1,4 +1,4 @@
-# End-to-End Azure Data Engineering Project Using Medallion Architecture
+# Metadata-Driven Azure Data Engineering Pipeline
 
 ## Project Overview
 
